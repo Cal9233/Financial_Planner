@@ -16,7 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
 const DatabaseConnection: React.FC = () => {
-  const { connectDatabase } = useAuth();
+  const { connectDatabase, checkDatabaseStatus } = useAuth();
   const [credentials, setCredentials] = useState({
     host: 'localhost',
     user: '',
@@ -59,8 +59,13 @@ const DatabaseConnection: React.FC = () => {
     setError('');
 
     try {
-      await connectDatabase(credentials);
-      // Connection successful - the app will redirect
+      const result = await connectDatabase(credentials);
+      if (result.connected) {
+        // Update the database status in context
+        await checkDatabaseStatus();
+        // The PrivateRoute will handle the redirect
+        window.location.reload(); // Force a reload to update the auth state
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to connect to database');
     } finally {

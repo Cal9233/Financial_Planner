@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, session, g
+from flask import Flask, jsonify, session, g, request
 from flask_cors import CORS
 from datetime import datetime, timedelta
 import os
@@ -36,7 +36,11 @@ def create_app(config_name=None):
     jwt.init_app(app)
     
     # Configure CORS with credentials
-    CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
+    CORS(app, 
+         origins=app.config.get('CORS_ORIGINS', ["http://localhost:3000"]),
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     
     # Register database blueprint first (doesn't require auth)
     app.register_blueprint(database_bp)
@@ -49,13 +53,30 @@ def create_app(config_name=None):
         
         # Only initialize if not already done
         if DatabaseManager.is_connected() and not hasattr(g, 'db_initialized'):
-            init_dynamic_db(app)
-            g.db = get_dynamic_db()
-            g.db_initialized = True
+            try:
+                init_dynamic_db(app)
+                g.db = get_dynamic_db()
+                g.db_initialized = True
+            except Exception as e:
+                # Don't fail the request if DB init fails
+                print(f"Database initialization error: {e}")
+                g.db = None
+                g.db_initialized = False
     
     @app.teardown_appcontext
     def shutdown_session(exception=None):
         close_db_session()
+    
+    # Add CORS headers to all responses
+    @app.after_request
+    def after_request(response):
+        origin = request.headers.get('Origin')
+        if origin in app.config.get('CORS_ORIGINS', []):
+            response.headers['Access-Control-Allow-Origin'] = origin
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response
     
     # Register other blueprints
     app.register_blueprint(auth_bp)

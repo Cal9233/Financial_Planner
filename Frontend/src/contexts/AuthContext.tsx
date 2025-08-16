@@ -9,7 +9,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   register: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
-  connectDatabase: (credentials: any) => Promise<void>;
+  connectDatabase: (credentials: any) => Promise<any>;
   disconnectDatabase: () => Promise<void>;
   checkDatabaseStatus: () => Promise<void>;
 }
