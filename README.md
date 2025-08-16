@@ -89,11 +89,11 @@ The frontend will start at `http://localhost:3000` and automatically open in you
 ## 📊 Features
 
 ### ✅ Implemented
-- **Database Connection Management** - Dynamic MySQL connection with session storage
+- **Database Connection Management** - Dynamic MySQL connection with secure cookie-based session storage
 - **User Authentication** - Secure registration/login with JWT tokens
 - **Dashboard** - Financial overview with charts and summaries
 - **Transaction Management** - Add, edit, delete, and filter transactions
-- **Data Visualization** - Pie charts for expense categories
+- **Data Visualization** - Pie charts for expense categories using Chart.js
 - **Responsive Design** - Works on desktop and mobile devices
 
 ### 🔲 Ready for Enhancement
@@ -164,11 +164,12 @@ curl -I -X OPTIONS http://localhost:5000/api/database/status \
 - Verify frontend URL in backend CORS configuration
 
 ## 🔒 Security Notes
-- Database credentials are stored in server-side sessions only
+- Database credentials are stored in encrypted cookie-based sessions
 - Passwords are hashed using Werkzeug security
 - JWT tokens expire after 24 hours
 - All API endpoints require authentication (except database connection)
 - CORS is restricted to specific origins
+- Session cookies are HttpOnly and use SameSite protection
 
 ## 📚 API Documentation
 

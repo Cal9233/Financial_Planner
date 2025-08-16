@@ -2,7 +2,7 @@
 
 ## Phase 2: Flask Backend Implementation
 
-This is the Flask backend API for the Personal Finance Management System. It provides RESTful endpoints for managing users, accounts, transactions, budgets, and financial goals.
+This is the Flask backend API for the Personal Finance Management System. It provides RESTful endpoints for managing users, accounts, transactions, budgets, and financial goals. The backend uses cookie-based sessions for storing database credentials securely.
 
 ## Setup Instructions
 

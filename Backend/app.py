@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, session, g
 from flask_cors import CORS
-from flask_session import Session
 from datetime import datetime, timedelta
 import os
 
@@ -25,13 +24,13 @@ def create_app(config_name=None):
     # Load configuration
     app.config.from_object(config[config_name])
     
-    # Configure session
-    app.config['SESSION_TYPE'] = 'filesystem'
-    app.config['SESSION_PERMANENT'] = True
+    # Use simple session instead of filesystem
+    # This avoids the bytes/string issue with flask-session
+    app.config['SESSION_COOKIE_NAME'] = 'pfm_session'
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
-    app.config['SESSION_USE_SIGNER'] = True
-    app.config['SESSION_KEY_PREFIX'] = 'pfm:'
-    Session(app)
     
     # Initialize JWT
     jwt.init_app(app)
@@ -45,6 +44,9 @@ def create_app(config_name=None):
     # Initialize database if connection info exists
     @app.before_request
     def before_request():
+        # Make session permanent
+        session.permanent = True
+        
         # Try to initialize database connection
         if DatabaseManager.is_connected():
             init_dynamic_db(app)
@@ -91,7 +93,7 @@ def create_app(config_name=None):
     def health_check():
         return jsonify({
             'status': 'healthy',
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now().isoformat()
         }), 200
     
     # Root endpoint
@@ -123,7 +125,9 @@ def create_app(config_name=None):
     
     @app.errorhandler(500)
     def internal_error(error):
-        db.session.rollback()
+        # Don't rollback if db.session doesn't exist
+        if hasattr(g, 'db') and g.db:
+            g.db.session.rollback()
         return jsonify({
             'error': 'Internal server error',
             'message': 'An unexpected error occurred'
@@ -133,6 +137,8 @@ def create_app(config_name=None):
 
 if __name__ == '__main__':
     app = create_app()
-    
-    # Don't create tables automatically - wait for database connection
+    print("\n" + "="*60)
+    print("Starting Flask app WITHOUT filesystem sessions")
+    print("This should avoid the bytes/string TypeError")
+    print("="*60 + "\n")
     app.run(debug=True, host='0.0.0.0', port=5000)
