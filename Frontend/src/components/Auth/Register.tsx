@@ -8,9 +8,9 @@ import {
   Button,
   Typography,
   Alert,
-  Link,
-  Grid,
+  Link
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Register: React.FC = () => {
@@ -97,7 +97,7 @@ const Register: React.FC = () => {
 
           <Box component="form" onSubmit={handleSubmit} noValidate>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid xs={12} sm={6}>
                 <TextField
                   required
                   fullWidth
@@ -111,7 +111,7 @@ const Register: React.FC = () => {
                 />
               </Grid>
               
-              <Grid item xs={12} sm={6}>
+              <Grid xs={12} sm={6}>
                 <TextField
                   required
                   fullWidth
@@ -125,7 +125,7 @@ const Register: React.FC = () => {
                 />
               </Grid>
               
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -140,7 +140,7 @@ const Register: React.FC = () => {
                 />
               </Grid>
               
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -156,7 +156,7 @@ const Register: React.FC = () => {
                 />
               </Grid>
               
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -172,7 +172,7 @@ const Register: React.FC = () => {
                 />
               </Grid>
               
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   required
                   fullWidth

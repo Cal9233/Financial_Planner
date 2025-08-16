@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Grid,
   Paper,
   Typography,
   Card,
@@ -9,6 +8,7 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   TrendingUp,
   TrendingDown,

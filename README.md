@@ -43,8 +43,8 @@ cp .env.example .env
 
 #### 4. Set Up the Frontend (Phase 3)
 ```bash
-# Navigate to frontend directory
-cd ../frontend
+# Navigate to Frontend directory
+cd ../Frontend
 
 # Install Node dependencies
 npm install

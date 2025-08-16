@@ -19,9 +19,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Grid,
   InputAdornment,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   Add,
   Edit,
@@ -32,6 +32,9 @@ import {
 import { format } from 'date-fns';
 import api from '../../services/api';
 import { Transaction, Account, Category } from '../../types';
+
+// Define transaction type union
+type TransactionType = 'expense' | 'income' | 'transfer';
 
 const Transactions: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -56,7 +59,7 @@ const Transactions: React.FC = () => {
     amount: '',
     description: '',
     transaction_date: format(new Date(), 'yyyy-MM-dd'),
-    transaction_type: 'expense' as const,
+    transaction_type: 'expense' as TransactionType, // Fix: Use the union type
     notes: '',
   });
 
@@ -106,7 +109,7 @@ const Transactions: React.FC = () => {
         amount: Math.abs(transaction.amount).toString(),
         description: transaction.description || '',
         transaction_date: transaction.transaction_date,
-        transaction_type: transaction.transaction_type,
+        transaction_type: transaction.transaction_type as TransactionType, // Fix: Cast to union type
         notes: transaction.notes || '',
       });
     } else {
@@ -362,7 +365,10 @@ const Transactions: React.FC = () => {
                 required
               >
                 {categories
-                  .filter((cat) => cat.category_type === formData.transaction_type || formData.transaction_type === 'transfer')
+                  .filter((cat) => {
+                    // Fix: Proper type checking for category filtering
+                    return cat.category_type === formData.transaction_type || formData.transaction_type === 'transfer';
+                  })
                   .map((category) => (
                     <MenuItem key={category.category_id} value={category.category_id}>
                       {category.category_name}
@@ -376,7 +382,7 @@ const Transactions: React.FC = () => {
                 fullWidth
                 label="Type"
                 value={formData.transaction_type}
-                onChange={(e) => setFormData({ ...formData, transaction_type: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, transaction_type: e.target.value as TransactionType })} // Fix: Cast to union type
               >
                 <MenuItem value="income">Income</MenuItem>
                 <MenuItem value="expense">Expense</MenuItem>
