@@ -47,10 +47,11 @@ def create_app(config_name=None):
         # Make session permanent
         session.permanent = True
         
-        # Try to initialize database connection
-        if DatabaseManager.is_connected():
+        # Only initialize if not already done
+        if DatabaseManager.is_connected() and not hasattr(g, 'db_initialized'):
             init_dynamic_db(app)
             g.db = get_dynamic_db()
+            g.db_initialized = True
     
     @app.teardown_appcontext
     def shutdown_session(exception=None):

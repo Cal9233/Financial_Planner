@@ -16,6 +16,22 @@ def init_dynamic_db(app):
     if not db:
         db = SQLAlchemy()
     
+    # Check if already initialized on this app
+    if hasattr(app, 'extensions') and 'sqlalchemy' in app.extensions:
+        # Already initialized, just update connection if needed
+        conn_info = DatabaseManager.get_connection_info()
+        if conn_info:
+            conn_string = DatabaseManager.create_connection_string(
+                host=conn_info['host'],
+                user=conn_info['user'],
+                password=conn_info['password'],
+                database=conn_info['database'],
+                port=conn_info.get('port', 3306)
+            )
+            app.config['SQLALCHEMY_DATABASE_URI'] = conn_string
+            return True
+        return False
+    
     # Check if we have connection info in session
     conn_info = DatabaseManager.get_connection_info()
     
