@@ -60,8 +60,8 @@ function App() {
               <Route path="reports" element={<Reports />} />
             </Route>
             
-            {/* Catch all */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* Catch all - redirect to db-connect as the entry point */}
+            <Route path="*" element={<Navigate to="/db-connect" replace />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -17,7 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
 const DatabaseConnection: React.FC = () => {
-  const { connectDatabase, checkDatabaseStatus } = useAuth();
+  const { connectDatabase, checkDatabaseStatus, dbStatus } = useAuth();
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     host: 'localhost',
@@ -30,6 +30,13 @@ const DatabaseConnection: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [testResult, setTestResult] = useState<any>(null);
+
+  useEffect(() => {
+    // If already connected, redirect to login
+    if (dbStatus.connected) {
+      navigate('/login');
+    }
+  }, [dbStatus.connected, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
