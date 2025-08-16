@@ -3,7 +3,6 @@ from flask_cors import CORS
 from flask_session import Session
 from datetime import datetime, timedelta
 import os
-import redis
 
 from config import jwt
 from config.config import config
