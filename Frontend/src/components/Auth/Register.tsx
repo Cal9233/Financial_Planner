@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -15,7 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, dbStatus, checkDatabaseStatus } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -26,6 +26,16 @@ const Register: React.FC = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const checkConnection = async () => {
+      await checkDatabaseStatus();
+      if (!dbStatus.connected) {
+        navigate('/db-connect');
+      }
+    };
+    checkConnection();
+  }, [dbStatus.connected, navigate, checkDatabaseStatus]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({

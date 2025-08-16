@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -17,6 +18,7 @@ import api from '../../services/api';
 
 const DatabaseConnection: React.FC = () => {
   const { connectDatabase, checkDatabaseStatus } = useAuth();
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     host: 'localhost',
     user: '',
@@ -63,8 +65,8 @@ const DatabaseConnection: React.FC = () => {
       if (result.connected) {
         // Update the database status in context
         await checkDatabaseStatus();
-        // The PrivateRoute will handle the redirect
-        window.location.reload(); // Force a reload to update the auth state
+        // Redirect to login page
+        navigate('/login');
       }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to connect to database');
