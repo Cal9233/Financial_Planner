@@ -27,6 +27,12 @@ This is the Flask backend API for the Personal Finance Management System. It pro
 
 ## API Endpoints
 
+### Database Connection
+- `POST /api/database/connect` - Connect to MySQL database
+- `POST /api/database/disconnect` - Disconnect from database
+- `GET /api/database/status` - Check connection status
+- `POST /api/database/test` - Test connection without saving
+
 ### Authentication
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
@@ -89,7 +95,12 @@ This is the Flask backend API for the Personal Finance Management System. It pro
 Use tools like Postman or curl to test the endpoints:
 
 ```bash
-# Register a new user
+# First, connect to the database
+curl -X POST http://localhost:5000/api/database/connect \
+  -H "Content-Type: application/json" \
+  -d '{"host":"localhost","user":"root","password":"your_password","database":"personal_finance_db"}'
+
+# Then register a new user
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","email":"test@example.com","password":"password123","first_name":"Test","last_name":"User"}'
@@ -99,6 +110,16 @@ curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"password123"}'
 ```
+
+## Dynamic Database Connection
+
+The backend now supports dynamic database connections. Users must provide their MySQL credentials through the frontend, which will be stored securely in the session. The workflow is:
+
+1. User provides database credentials via frontend
+2. Backend tests the connection
+3. If successful, credentials are stored in session
+4. All subsequent API calls use the stored connection
+5. Connection persists for 7 days or until logout
 
 ## Security Notes
 

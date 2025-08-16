@@ -1,16 +1,21 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, session, g
 from flask_cors import CORS
-from datetime import datetime
+from flask_session import Session
+from datetime import datetime, timedelta
 import os
+import redis
 
-from config import db, jwt
+from config import jwt
 from config.config import config
+from config.dynamic_config import init_dynamic_db, get_dynamic_db, close_db_session
+from utils.db_manager import DatabaseManager
 
 # Import routes
 from routes import (
     auth_bp, users_bp, categories_bp, accounts_bp,
     transactions_bp, budgets_bp, goals_bp, reports_bp
 )
+from routes.database import database_bp
 
 def create_app(config_name=None):
     if config_name is None:
@@ -21,14 +26,36 @@ def create_app(config_name=None):
     # Load configuration
     app.config.from_object(config[config_name])
     
-    # Initialize extensions
-    db.init_app(app)
+    # Configure session
+    app.config['SESSION_TYPE'] = 'filesystem'
+    app.config['SESSION_PERMANENT'] = True
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+    app.config['SESSION_USE_SIGNER'] = True
+    app.config['SESSION_KEY_PREFIX'] = 'pfm:'
+    Session(app)
+    
+    # Initialize JWT
     jwt.init_app(app)
     
-    # Configure CORS
-    CORS(app, origins=app.config['CORS_ORIGINS'])
+    # Configure CORS with credentials
+    CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     
-    # Register blueprints
+    # Register database blueprint first (doesn't require auth)
+    app.register_blueprint(database_bp)
+    
+    # Initialize database if connection info exists
+    @app.before_request
+    def before_request():
+        # Try to initialize database connection
+        if DatabaseManager.is_connected():
+            init_dynamic_db(app)
+            g.db = get_dynamic_db()
+    
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        close_db_session()
+    
+    # Register other blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(categories_bp)
@@ -77,6 +104,7 @@ def create_app(config_name=None):
             'endpoints': {
                 'auth': '/api/auth',
                 'users': '/api/users',
+                'database': '/api/database',
                 'categories': '/api/categories',
                 'accounts': '/api/accounts',
                 'transactions': '/api/transactions',
@@ -107,8 +135,5 @@ def create_app(config_name=None):
 if __name__ == '__main__':
     app = create_app()
     
-    # Create tables if they don't exist
-    with app.app_context():
-        db.create_all()
-    
+    # Don't create tables automatically - wait for database connection
     app.run(debug=True, host='0.0.0.0', port=5000)

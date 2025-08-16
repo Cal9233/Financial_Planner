@@ -1,12 +1,14 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from datetime import datetime
-from config import db
+from config.dynamic_config import get_dynamic_db
 from models import User
+from utils.db_manager import require_db_connection
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 @auth_bp.route('/register', methods=['POST'])
+@require_db_connection
 def register():
     try:
         data = request.get_json()
@@ -33,6 +35,7 @@ def register():
         )
         user.set_password(data['password'])
         
+        db = get_dynamic_db()
         db.session.add(user)
         db.session.commit()
         
@@ -52,6 +55,7 @@ def register():
         return jsonify({'error': str(e)}), 500
 
 @auth_bp.route('/login', methods=['POST'])
+@require_db_connection
 def login():
     try:
         data = request.get_json()
@@ -72,6 +76,7 @@ def login():
         
         # Update last login
         user.last_login = datetime.utcnow()
+        db = get_dynamic_db()
         db.session.commit()
         
         # Create tokens
