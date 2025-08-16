@@ -46,7 +46,14 @@ def connect_database():
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        error_details = {
+            'error': str(e),
+            'type': type(e).__name__,
+            'traceback': traceback.format_exc()
+        }
+        print(f"\nDatabase connection error: {error_details}")
+        return jsonify(error_details), 500
 
 @database_bp.route('/disconnect', methods=['POST'])
 def disconnect_database():
