@@ -90,7 +90,7 @@ const Register: React.FC = () => {
       bgcolor="background.default"
     >
       <Card sx={{ maxWidth: 500, width: '100%', mx: 2 }}>
-        <CardContent>
+        <CardContent sx={{ p: 4 }}>
           <Typography variant="h4" gutterBottom align="center">
             Register
           </Typography>
@@ -100,14 +100,14 @@ const Register: React.FC = () => {
           </Typography>
 
           {errors.general && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 3 }}>
               {errors.general}
             </Alert>
           )}
 
           <Box component="form" onSubmit={handleSubmit} noValidate>
             <Grid container spacing={2}>
-              <Grid xs={12} sm={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   required
                   fullWidth
@@ -121,7 +121,7 @@ const Register: React.FC = () => {
                 />
               </Grid>
               
-              <Grid xs={12} sm={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   required
                   fullWidth
@@ -135,7 +135,7 @@ const Register: React.FC = () => {
                 />
               </Grid>
               
-              <Grid xs={12}>
+              <Grid item xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -150,7 +150,7 @@ const Register: React.FC = () => {
                 />
               </Grid>
               
-              <Grid xs={12}>
+              <Grid item xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -166,7 +166,7 @@ const Register: React.FC = () => {
                 />
               </Grid>
               
-              <Grid xs={12}>
+              <Grid item xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -182,7 +182,7 @@ const Register: React.FC = () => {
                 />
               </Grid>
               
-              <Grid xs={12}>
+              <Grid item xs={12}>
                 <TextField
                   required
                   fullWidth
@@ -203,7 +203,7 @@ const Register: React.FC = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{ mt: 4, mb: 2 }}
               disabled={loading}
             >
               {loading ? 'Creating Account...' : 'Register'}

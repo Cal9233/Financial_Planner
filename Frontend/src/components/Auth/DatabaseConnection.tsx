@@ -29,7 +29,6 @@ const DatabaseConnection: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [testResult, setTestResult] = useState<any>(null);
 
   useEffect(() => {
     // If already connected, redirect to login
@@ -45,22 +44,6 @@ const DatabaseConnection: React.FC = () => {
       [name]: name === 'port' ? parseInt(value) || 3306 : value,
     }));
     setError('');
-    setTestResult(null);
-  };
-
-  const handleTest = async () => {
-    setLoading(true);
-    setError('');
-    setTestResult(null);
-
-    try {
-      const response = await api.post('/api/database/test', credentials);
-      setTestResult(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to test connection');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleConnect = async () => {
@@ -103,22 +86,6 @@ const DatabaseConnection: React.FC = () => {
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
-            </Alert>
-          )}
-
-          {testResult && (
-            <Alert 
-              severity={testResult.success && testResult.schema_valid ? 'success' : 'warning'} 
-              sx={{ mb: 2 }}
-            >
-              {testResult.message}
-              {testResult.missing_tables && (
-                <Box mt={1}>
-                  <Typography variant="caption" display="block">
-                    Missing tables: {testResult.missing_tables.join(', ')}
-                  </Typography>
-                </Box>
-              )}
             </Alert>
           )}
 
@@ -194,32 +161,14 @@ const DatabaseConnection: React.FC = () => {
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
               <Button
                 fullWidth
-                variant="outlined"
-                onClick={handleTest}
-                disabled={loading || !credentials.user || !credentials.password}
-              >
-                {loading ? <CircularProgress size={24} /> : 'Test Connection'}
-              </Button>
-              
-              <Button
-                fullWidth
                 variant="contained"
                 onClick={handleConnect}
-                disabled={
-                  loading || 
-                  !credentials.user || 
-                  !credentials.password ||
-                  (testResult && !testResult.schema_valid)
-                }
+                disabled={loading || !credentials.user || !credentials.password}
               >
                 {loading ? <CircularProgress size={24} /> : 'Connect'}
               </Button>
             </Box>
           </Box>
-
-          <Typography variant="caption" display="block" sx={{ mt: 2 }} align="center">
-            Make sure you have run the Phase 1 database script before connecting.
-          </Typography>
         </CardContent>
       </Card>
     </Box>
