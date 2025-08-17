@@ -10,7 +10,9 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 @auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 @require_db_connection
 def register():
+    # Get database instance first
     db = get_dynamic_db()
+    
     try:
         data = request.get_json()
         
@@ -51,13 +53,16 @@ def register():
         }), 201
         
     except Exception as e:
-        db.session.rollback()
+        if db and hasattr(db, 'session'):
+            db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @auth_bp.route('/login', methods=['POST'])
 @require_db_connection
 def login():
+    # Get database instance first
     db = get_dynamic_db()
+    
     try:
         data = request.get_json()
         
@@ -91,6 +96,8 @@ def login():
         }), 200
         
     except Exception as e:
+        if db and hasattr(db, 'session'):
+            db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @auth_bp.route('/logout', methods=['POST'])
@@ -108,6 +115,24 @@ def refresh():
         
         return jsonify({
             'access_token': access_token
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@auth_bp.route('/me', methods=['GET'])
+@jwt_required()
+@require_db_connection
+def get_current_user():
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        return jsonify({
+            'user': user.to_dict()
         }), 200
         
     except Exception as e:
