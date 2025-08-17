@@ -5,7 +5,7 @@ import os
 
 from config import jwt
 from config.config import config
-from config.dynamic_config import init_dynamic_db, get_dynamic_db, close_db_session
+from config.dynamic_config import init_dynamic_db, get_dynamic_db, close_db_session, init_app_db
 from utils.db_manager import DatabaseManager
 
 # Import routes
@@ -35,6 +35,9 @@ def create_app(config_name=None):
     # Initialize JWT
     jwt.init_app(app)
     
+    # Initialize database with app (without actual connection)
+    init_app_db(app)
+    
     # Configure CORS with credentials
     CORS(app, 
          origins=app.config.get('CORS_ORIGINS', ["http://localhost:3000"]),
@@ -51,17 +54,15 @@ def create_app(config_name=None):
         # Make session permanent
         session.permanent = True
         
-        # Only initialize if not already done
-        if DatabaseManager.is_connected() and not hasattr(g, 'db_initialized'):
+        # Reinitialize database connection if we have credentials
+        if DatabaseManager.is_connected():
             try:
                 init_dynamic_db(app)
                 g.db = get_dynamic_db()
-                g.db_initialized = True
             except Exception as e:
                 # Don't fail the request if DB init fails
                 print(f"Database initialization error: {e}")
                 g.db = None
-                g.db_initialized = False
     
     @app.teardown_appcontext
     def shutdown_session(exception=None):
