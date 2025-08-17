@@ -1,17 +1,29 @@
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, session
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from datetime import datetime
-from config.dynamic_config import get_dynamic_db
-from models import User
-from utils.db_manager import require_db_connection
+from models.user import SimpleUser
+from config.db import get_db_connection
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+
+def require_db_connection(f):
+    """Simple decorator to check database connection"""
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if request.method == 'OPTIONS':
+            return '', 200
+        if 'db_config' not in session:
+            return jsonify({'error': 'Database connection required'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 @auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 @require_db_connection
 def register():
-    # Get database instance first
-    db = get_dynamic_db()
+    """Register a new user"""
+    if request.method == 'OPTIONS':
+        return '', 200
     
     try:
         data = request.get_json()
@@ -23,14 +35,16 @@ def register():
                 return jsonify({'error': f'{field} is required'}), 400
         
         # Check if user already exists
-        if User.query.filter_by(username=data['username']).first():
+        existing_user = SimpleUser.find_by_username(data['username'])
+        if existing_user:
             return jsonify({'error': 'Username already exists'}), 400
-            
-        if User.query.filter_by(email=data['email']).first():
+        
+        existing_email = SimpleUser.find_by_email(data['email'])
+        if existing_email:
             return jsonify({'error': 'Email already exists'}), 400
         
         # Create new user
-        user = User(
+        user = SimpleUser(
             username=data['username'],
             email=data['email'],
             first_name=data['first_name'],
@@ -38,8 +52,8 @@ def register():
         )
         user.set_password(data['password'])
         
-        db.session.add(user)
-        db.session.commit()
+        # Save user
+        user.save()
         
         # Create tokens
         access_token = create_access_token(identity=user.user_id)
@@ -53,15 +67,14 @@ def register():
         }), 201
         
     except Exception as e:
-        if db and hasattr(db, 'session'):
-            db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST', 'OPTIONS'])
 @require_db_connection
 def login():
-    # Get database instance first
-    db = get_dynamic_db()
+    """Login user"""
+    if request.method == 'OPTIONS':
+        return '', 200
     
     try:
         data = request.get_json()
@@ -70,9 +83,9 @@ def login():
             return jsonify({'error': 'Username and password are required'}), 400
         
         # Find user by username or email
-        user = User.query.filter(
-            (User.username == data['username']) | (User.email == data['username'])
-        ).first()
+        user = SimpleUser.find_by_username(data['username'])
+        if not user:
+            user = SimpleUser.find_by_email(data['username'])
         
         if not user or not user.check_password(data['password']):
             return jsonify({'error': 'Invalid credentials'}), 401
@@ -81,8 +94,7 @@ def login():
             return jsonify({'error': 'Account is deactivated'}), 403
         
         # Update last login
-        user.last_login = datetime.utcnow()
-        db.session.commit()
+        user.update_last_login()
         
         # Create tokens
         access_token = create_access_token(identity=user.user_id)
@@ -96,19 +108,18 @@ def login():
         }), 200
         
     except Exception as e:
-        if db and hasattr(db, 'session'):
-            db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
-    # In a production environment, you might want to blacklist the token
+    """Logout user"""
     return jsonify({'message': 'Logout successful'}), 200
 
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
+    """Refresh access token"""
     try:
         user_id = get_jwt_identity()
         access_token = create_access_token(identity=user_id)
@@ -124,13 +135,14 @@ def refresh():
 @jwt_required()
 @require_db_connection
 def get_current_user():
+    """Get current user info"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = SimpleUser.find_by_id(user_id)
         
         if not user:
             return jsonify({'error': 'User not found'}), 404
-            
+        
         return jsonify({
             'user': user.to_dict()
         }), 200

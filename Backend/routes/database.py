@@ -1,13 +1,15 @@
 from flask import Blueprint, request, jsonify, session
-from utils.db_manager import DatabaseManager
-from config.dynamic_config import init_dynamic_db, get_dynamic_db
-import pymysql
+from config.db import get_db_connection, init_db_tables, SimpleDBConnection
+import mysql.connector
 
 database_bp = Blueprint('database', __name__, url_prefix='/api/database')
 
-@database_bp.route('/connect', methods=['POST'])
+@database_bp.route('/connect', methods=['POST', 'OPTIONS'])
 def connect_database():
     """Connect to MySQL database with provided credentials"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         data = request.get_json()
         
@@ -17,53 +19,66 @@ def connect_database():
             if field not in data:
                 return jsonify({'error': f'{field} is required'}), 400
         
-        host = data['host']
-        user = data['user']
-        password = data['password']
-        database = data['database']
-        port = data.get('port', 3306)
-        
         # Test connection
-        success, message = DatabaseManager.test_connection(host, user, password, database, port)
+        test_db = SimpleDBConnection()
+        success = test_db.connect(
+            host=data.get('host', 'localhost'),
+            user=data.get('user'),
+            password=data.get('password'),
+            database=data.get('database'),
+            port=int(data.get('port', 3306))
+        )
         
         if not success:
             return jsonify({
-                'error': 'Connection failed',
-                'message': message
+                'connected': False,
+                'error': 'Failed to connect to database'
             }), 400
         
         # Store connection info in session
-        DatabaseManager.store_connection_info(host, user, password, database, port)
+        session['db_config'] = {
+            'host': data.get('host', 'localhost'),
+            'user': data.get('user'),
+            'password': data.get('password'),
+            'database': data.get('database'),
+            'port': int(data.get('port', 3306))
+        }
+        session['db_connected'] = True
+        session.permanent = True
         
-        # Initialize database with new connection
-        from flask import current_app
-        init_dynamic_db(current_app)
+        # Initialize tables
+        init_db_tables()
+        
+        # Close test connection
+        test_db.close()
         
         return jsonify({
-            'message': 'Database connected successfully',
             'connected': True,
-            'database': database
+            'message': 'Successfully connected to database'
         }), 200
         
     except Exception as e:
-        import traceback
-        error_details = {
-            'error': str(e),
-            'type': type(e).__name__,
-            'traceback': traceback.format_exc()
-        }
-        print(f"\nDatabase connection error: {error_details}")
-        return jsonify(error_details), 500
+        return jsonify({
+            'connected': False,
+            'error': str(e)
+        }), 500
 
 @database_bp.route('/disconnect', methods=['POST'])
 def disconnect_database():
-    """Disconnect from current database"""
+    """Disconnect from database"""
     try:
-        DatabaseManager.clear_connection_info()
+        # Clear session
+        session.pop('db_config', None)
+        session.pop('db_connected', None)
+        
+        # Close any existing connection
+        db = get_db_connection()
+        if db.connection:
+            db.close()
         
         return jsonify({
-            'message': 'Database disconnected successfully',
-            'connected': False
+            'connected': False,
+            'message': 'Disconnected from database'
         }), 200
         
     except Exception as e:
@@ -73,26 +88,33 @@ def disconnect_database():
 def database_status():
     """Check database connection status"""
     try:
-        is_connected = DatabaseManager.is_connected()
-        conn_info = DatabaseManager.get_connection_info()
+        is_connected = session.get('db_connected', False)
         
-        response = {
-            'connected': is_connected
-        }
+        # Try to ping the database if we think we're connected
+        if is_connected:
+            db = get_db_connection()
+            if db.connection:
+                try:
+                    db.connection.ping(reconnect=True)
+                except:
+                    is_connected = False
+            else:
+                is_connected = False
         
-        if is_connected and conn_info:
-            response['database'] = conn_info.get('database')
-            response['host'] = conn_info.get('host')
-            response['user'] = conn_info.get('user')
-            
-        return jsonify(response), 200
+        return jsonify({
+            'connected': is_connected,
+            'database': session.get('db_config', {}).get('database') if is_connected else None
+        }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'connected': False,
+            'error': str(e)
+        }), 500
 
 @database_bp.route('/test', methods=['POST'])
 def test_connection():
-    """Test database connection without saving"""
+    """Test database connection with provided credentials"""
     try:
         data = request.get_json()
         
@@ -102,65 +124,41 @@ def test_connection():
             if field not in data:
                 return jsonify({'error': f'{field} is required'}), 400
         
-        host = data['host']
-        user = data['user']
-        password = data['password']
-        database = data['database']
-        port = data.get('port', 3306)
-        
         # Test connection
-        success, message = DatabaseManager.test_connection(host, user, password, database, port)
+        test_db = SimpleDBConnection()
+        success = test_db.connect(
+            host=data.get('host', 'localhost'),
+            user=data.get('user'),
+            password=data.get('password'),
+            database=data.get('database'),
+            port=int(data.get('port', 3306))
+        )
         
         if success:
-            # Check if database has the required schema
-            try:
-                connection = pymysql.connect(
-                    host=host,
-                    user=user,
-                    password=password,
-                    database=database,
-                    port=port
-                )
-                cursor = connection.cursor()
-                
-                # Check for required tables
-                required_tables = ['Users', 'Categories', 'Accounts', 'Transactions', 
-                                 'Budgets', 'Financial_Goals', 'Transaction_Splits']
-                
-                cursor.execute("SHOW TABLES")
-                existing_tables = [table[0] for table in cursor.fetchall()]
-                
-                missing_tables = [table for table in required_tables if table not in existing_tables]
-                
-                cursor.close()
-                connection.close()
-                
-                if missing_tables:
-                    return jsonify({
-                        'success': True,
-                        'message': 'Connection successful but schema incomplete',
-                        'missing_tables': missing_tables,
-                        'schema_valid': False
-                    }), 200
-                else:
-                    return jsonify({
-                        'success': True,
-                        'message': 'Connection successful and schema valid',
-                        'schema_valid': True
-                    }), 200
-                    
-            except Exception as e:
-                return jsonify({
-                    'success': True,
-                    'message': 'Connection successful but could not verify schema',
-                    'error': str(e),
-                    'schema_valid': False
-                }), 200
+            # Check if tables exist
+            test_db.execute("SHOW TABLES")
+            tables = [row['Tables_in_' + data['database']] for row in test_db.fetchall()]
+            
+            required_tables = ['Users', 'Categories', 'Accounts', 'Transactions', 
+                             'TransactionSplits', 'Budgets', 'FinancialGoals']
+            missing_tables = [t for t in required_tables if t not in tables]
+            
+            test_db.close()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Connection successful',
+                'schema_valid': len(missing_tables) == 0,
+                'missing_tables': missing_tables if missing_tables else None
+            }), 200
         else:
             return jsonify({
                 'success': False,
-                'message': message
-            }), 200
+                'message': 'Failed to connect to database'
+            }), 400
             
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
