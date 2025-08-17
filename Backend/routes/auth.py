@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, session
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from datetime import datetime
 from models.user import SimpleUser
+from models.category import Category
 from config.db import get_db_connection
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -54,6 +55,9 @@ def register():
         
         # Save user
         user.save()
+        
+        # Create default categories for the new user
+        Category.create_default_categories(user.user_id)
         
         # Create tokens
         access_token = create_access_token(identity=user.user_id)
