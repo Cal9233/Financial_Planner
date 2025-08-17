@@ -84,9 +84,12 @@ def disconnect_database():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@database_bp.route('/status', methods=['GET'])
+@database_bp.route('/status', methods=['GET', 'OPTIONS'])
 def database_status():
     """Check database connection status"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         is_connected = session.get('db_connected', False)
         

@@ -14,7 +14,7 @@ from routes.users import users_bp
 def create_app():
     app = Flask(__name__)
     
-    # Basic configuration
+    # Configuration
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-jwt-secret-key')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
@@ -105,15 +105,7 @@ def create_app():
     return app
 
 if __name__ == '__main__':
-    from datetime import datetime
-    
     app = create_app()
-    
-    print("\n" + "="*60)
-    print("Starting Simple Flask app with mysql.connector")
-    print("Based on DAL.py approach - much simpler!")
-    print("="*60 + "\n")
-    
     app.run(
         host='0.0.0.0',
         port=5000,
