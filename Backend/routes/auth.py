@@ -10,6 +10,7 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 @auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 @require_db_connection
 def register():
+    db = get_dynamic_db()
     try:
         data = request.get_json()
         
@@ -35,7 +36,6 @@ def register():
         )
         user.set_password(data['password'])
         
-        db = get_dynamic_db()
         db.session.add(user)
         db.session.commit()
         
@@ -57,6 +57,7 @@ def register():
 @auth_bp.route('/login', methods=['POST'])
 @require_db_connection
 def login():
+    db = get_dynamic_db()
     try:
         data = request.get_json()
         
@@ -76,7 +77,6 @@ def login():
         
         # Update last login
         user.last_login = datetime.utcnow()
-        db = get_dynamic_db()
         db.session.commit()
         
         # Create tokens
