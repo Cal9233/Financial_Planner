@@ -7,7 +7,7 @@ from utils.db_manager import require_db_connection
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
-@auth_bp.route('/register', methods=['POST'])
+@auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 @require_db_connection
 def register():
     try:

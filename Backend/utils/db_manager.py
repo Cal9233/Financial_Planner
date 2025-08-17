@@ -67,6 +67,10 @@ def require_db_connection(f):
     """Decorator to ensure database connection exists"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        from flask import request
+        # Skip database check for OPTIONS requests (CORS preflight)
+        if request.method == 'OPTIONS':
+            return '', 200
         if not DatabaseManager.is_connected():
             return {'error': 'Database connection required'}, 401
         return f(*args, **kwargs)
