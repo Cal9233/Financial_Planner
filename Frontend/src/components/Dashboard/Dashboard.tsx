@@ -50,19 +50,19 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true);
       const [summaryRes, accountsRes, transactionsRes, budgetsRes, goalsRes] = await Promise.all([
-        api.get('/api/transactions/summary'),
+        api.get('/api/dashboard/summary'),
         api.get('/api/accounts'),
-        api.get('/api/transactions?per_page=5'),
-        api.get('/api/budgets/performance'),
-        api.get('/api/goals?include_completed=false'),
+        api.get('/api/dashboard/recent-transactions'),
+        api.get('/api/budgets'),
+        api.get('/api/goals'),
       ]);
 
       setData({
         summary: summaryRes.data,
-        accounts: accountsRes.data.accounts,
-        recentTransactions: transactionsRes.data.transactions,
-        budgets: budgetsRes.data.performance,
-        goals: goalsRes.data.goals,
+        accounts: accountsRes.data.accounts || [],
+        recentTransactions: transactionsRes.data.transactions || [],
+        budgets: budgetsRes.data.budgets || [],
+        goals: goalsRes.data.goals || [],
       });
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load dashboard data');

@@ -97,9 +97,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const response = await api.get('/api/users/profile');
       setUser(response.data.user);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load user profile:', error);
-      localStorage.clear();
+      // Only clear storage if it's a 401 error
+      if (error.response?.status === 401) {
+        localStorage.clear();
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }
