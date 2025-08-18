@@ -240,3 +240,59 @@ class Transaction:
         except Exception as e:
             print(f"Error getting transaction count: {e}")
             return 0
+    
+    @staticmethod
+    def find_by_id(transaction_id, user_id):
+        """Find transaction by ID and user ID"""
+        db = get_db_connection()
+        if not db.connection:
+            return None
+        
+        try:
+            query = """
+                SELECT t.*, a.account_name, c.name as category_name
+                FROM Transactions t
+                LEFT JOIN Accounts a ON t.account_id = a.account_id
+                LEFT JOIN Categories c ON t.category_id = c.category_id
+                WHERE t.transaction_id = %s AND t.user_id = %s
+            """
+            db.execute(query, (transaction_id, user_id))
+            row = db.fetchone()
+            
+            if row:
+                trans = Transaction(
+                    transaction_id=row['transaction_id'],
+                    user_id=row['user_id'],
+                    account_id=row['account_id'],
+                    category_id=row['category_id'],
+                    transaction_date=row['transaction_date'],
+                    amount=row['amount'],
+                    transaction_type=row['transaction_type'],
+                    description=row['description'],
+                    reference_number=row['reference_number'],
+                    is_recurring=row['is_recurring'],
+                    created_at=row['created_at'],
+                    updated_at=row['updated_at']
+                )
+                return trans
+            return None
+            
+        except Exception as e:
+            print(f"Error finding transaction: {e}")
+            return None
+    
+    def delete(self):
+        """Delete transaction from database"""
+        db = get_db_connection()
+        if not db.connection:
+            raise Exception("No database connection")
+        
+        try:
+            query = "DELETE FROM Transactions WHERE transaction_id = %s AND user_id = %s"
+            db.execute(query, (self.transaction_id, self.user_id))
+            db.commit()
+            return True
+            
+        except Exception as e:
+            db.rollback()
+            raise e

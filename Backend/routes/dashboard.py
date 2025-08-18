@@ -61,27 +61,7 @@ def get_transactions():
 
 # Goals routes moved to goals.py
 
-@dashboard_bp.route('/categories', methods=['GET', 'OPTIONS'])
-@jwt_required()
-def get_categories():
-    """Get expense/income categories"""
-    if request.method == 'OPTIONS':
-        return '', 200
-    
-    try:
-        user_id = get_jwt_identity()
-        category_type = request.args.get('type')  # 'income', 'expense', or None for all
-        
-        categories = Category.get_by_user_id(user_id, type=category_type)
-        category_list = [cat.to_dict() for cat in categories]
-        
-        return jsonify({
-            'categories': category_list,
-            'total': len(category_list)
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+# Categories routes moved to categories.py
 
 # Additional endpoints for creating data
 
@@ -127,36 +107,69 @@ def create_transaction():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@dashboard_bp.route('/transactions/<int:transaction_id>', methods=['PUT'])
+@dashboard_bp.route('/transactions/<int:transaction_id>', methods=['PUT', 'OPTIONS'])
 @jwt_required()
 def update_transaction(transaction_id):
     """Update a transaction"""
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
         
-        # For now, return success
-        # In a real implementation, you would update the transaction
+        # Find the transaction
+        transaction = Transaction.find_by_id(transaction_id, user_id)
+        if not transaction:
+            return jsonify({'error': 'Transaction not found'}), 404
+        
+        # Update fields
+        if 'account_id' in data:
+            transaction.account_id = data['account_id']
+        if 'category_id' in data:
+            transaction.category_id = data['category_id']
+        if 'transaction_date' in data:
+            transaction.transaction_date = data['transaction_date']
+        if 'amount' in data:
+            transaction.amount = data['amount']
+        if 'transaction_type' in data:
+            transaction.transaction_type = data['transaction_type']
+        if 'description' in data:
+            transaction.description = data['description']
+        if 'reference_number' in data:
+            transaction.reference_number = data['reference_number']
+        if 'is_recurring' in data:
+            transaction.is_recurring = data['is_recurring']
+        
+        # Save the transaction
+        transaction.save()
+        
         return jsonify({
             'message': 'Transaction updated successfully',
-            'transaction': {
-                'transaction_id': transaction_id,
-                **data
-            }
+            'transaction': transaction.to_dict()
         }), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@dashboard_bp.route('/transactions/<int:transaction_id>', methods=['DELETE'])
+@dashboard_bp.route('/transactions/<int:transaction_id>', methods=['DELETE', 'OPTIONS'])
 @jwt_required()
 def delete_transaction(transaction_id):
     """Delete a transaction"""
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         user_id = get_jwt_identity()
         
-        # For now, return success
-        # In a real implementation, you would delete the transaction
+        # Find the transaction
+        transaction = Transaction.find_by_id(transaction_id, user_id)
+        if not transaction:
+            return jsonify({'error': 'Transaction not found'}), 404
+        
+        # Delete the transaction
+        transaction.delete()
+        
         return jsonify({
             'message': 'Transaction deleted successfully'
         }), 200
