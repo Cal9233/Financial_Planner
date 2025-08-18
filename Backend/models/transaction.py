@@ -242,8 +242,101 @@ class Transaction:
             return 0
     
     @staticmethod
-    def find_by_id(transaction_id, user_id):
-        """Find transaction by ID and user ID"""
+    def get_summary_for_period(user_id, start_date, end_date):
+        """Get transaction summary for a specific period"""
+        db = get_db_connection()
+        if not db.connection:
+            return {'total_income': 0, 'total_expenses': 0, 'net_income': 0, 'transaction_count': 0}
+        
+        try:
+            query = """
+                SELECT 
+                    SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as total_income,
+                    SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as total_expenses,
+                    COUNT(*) as transaction_count
+                FROM Transactions 
+                WHERE user_id = %s AND transaction_date BETWEEN %s AND %s
+            """
+            db.execute(query, (user_id, start_date, end_date))
+            result = db.fetchone()
+            
+            if result:
+                total_income = float(result['total_income'] or 0)
+                total_expenses = float(result['total_expenses'] or 0)
+                return {
+                    'total_income': total_income,
+                    'total_expenses': total_expenses,
+                    'net_income': total_income - total_expenses,
+                    'transaction_count': result['transaction_count']
+                }
+            
+            return {'total_income': 0, 'total_expenses': 0, 'net_income': 0, 'transaction_count': 0}
+            
+        except Exception as e:
+            print(f"Error getting summary for period: {e}")
+            return {'total_income': 0, 'total_expenses': 0, 'net_income': 0, 'transaction_count': 0}
+    
+    @staticmethod
+    def get_spending_by_category(user_id, period='month'):
+        """Get spending breakdown by category"""
+        db = get_db_connection()
+        if not db.connection:
+            return []
+        
+        try:
+            # Calculate date range based on period
+            end_date = datetime.now()
+            if period == 'month':
+                start_date = end_date - timedelta(days=30)
+            elif period == 'week':
+                start_date = end_date - timedelta(days=7)
+            elif period == 'year':
+                start_date = end_date - timedelta(days=365)
+            else:
+                start_date = datetime(end_date.year, end_date.month, 1)
+            
+            query = """
+                SELECT 
+                    c.category_id,
+                    c.category_name,
+                    c.category_type,
+                    c.icon,
+                    SUM(t.amount) as total_amount,
+                    COUNT(t.transaction_id) as transaction_count
+                FROM Categories c
+                LEFT JOIN Transactions t ON c.category_id = t.category_id 
+                    AND t.user_id = %s 
+                    AND t.transaction_date BETWEEN %s AND %s
+                    AND t.transaction_type = 'expense'
+                WHERE c.user_id = %s OR c.is_default = 1
+                GROUP BY c.category_id, c.category_name, c.category_type, c.icon
+                HAVING total_amount > 0
+                ORDER BY total_amount DESC
+            """
+            
+            db.execute(query, (user_id, start_date, end_date, user_id))
+            results = db.fetchall()
+            
+            categories = []
+            for row in results:
+                categories.append({
+                    'category_id': row['category_id'],
+                    'category_name': row['category_name'],
+                    'category_type': row['category_type'],
+                    'icon': row['icon'],
+                    'total_amount': float(row['total_amount'] or 0),
+                    'transaction_count': row['transaction_count']
+                })
+            
+            return categories
+            
+        except Exception as e:
+            print(f"Error getting spending by category: {e}")
+            return []
+    
+    @staticmethod
+    def find_by_id(transaction_id, user_id=None):
+        """Find transaction by ID and optionally user ID"""
         db = get_db_connection()
         if not db.connection:
             return None

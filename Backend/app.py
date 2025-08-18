@@ -14,15 +14,17 @@ from routes.accounts import accounts_bp
 from routes.budgets import budgets_bp
 from routes.goals import goals_bp
 from routes.categories import categories_bp
+from routes.transactions import transactions_bp
 
 def create_app():
     app = Flask(__name__)
     
     # Configuration
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
-    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-jwt-secret-key')
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-jwt-secret-key-change-in-production')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+    app.config['JWT_ALGORITHM'] = 'HS256'
     
     # Session configuration
     app.config['SESSION_COOKIE_NAME'] = 'pfm_session'
@@ -51,6 +53,7 @@ def create_app():
     app.register_blueprint(budgets_bp)
     app.register_blueprint(goals_bp)
     app.register_blueprint(categories_bp)
+    app.register_blueprint(transactions_bp)
     
     # Global OPTIONS handler for CORS preflight
     @app.before_request
@@ -98,6 +101,7 @@ def create_app():
     
     @jwt.invalid_token_loader
     def invalid_token_callback(error):
+        print(f"JWT Invalid Token Error: {error}")
         return jsonify({
             'error': 'Invalid token',
             'message': str(error)
