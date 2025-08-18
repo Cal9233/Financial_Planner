@@ -489,6 +489,44 @@ BEGIN
     ORDER BY priority_level DESC, target_date ASC;
 END//
 
+-- Procedure to add a new transaction
+CREATE PROCEDURE AddTransaction(
+    IN p_account_id INT,
+    IN p_category_id INT,
+    IN p_amount DECIMAL(10,2),
+    IN p_description VARCHAR(255),
+    IN p_transaction_date DATE,
+    IN p_transaction_time TIME,
+    IN p_transaction_type ENUM('income', 'expense', 'transfer'),
+    IN p_notes TEXT
+)
+BEGIN
+    DECLARE v_transaction_id INT;
+    
+    -- Insert new transaction
+    INSERT INTO Transactions (
+        account_id, category_id, amount, description, 
+        transaction_date, transaction_time, transaction_type, 
+        status, notes
+    ) VALUES (
+        p_account_id, p_category_id, p_amount, p_description,
+        p_transaction_date, p_transaction_time, p_transaction_type,
+        'completed', p_notes
+    );
+    
+    SET v_transaction_id = LAST_INSERT_ID();
+    
+    -- Update account balance
+    IF p_transaction_type = 'income' THEN
+        UPDATE Accounts SET balance = balance + p_amount WHERE account_id = p_account_id;
+    ELSEIF p_transaction_type = 'expense' THEN
+        UPDATE Accounts SET balance = balance + p_amount WHERE account_id = p_account_id;
+    END IF;
+    
+    SELECT 'Transaction added successfully' as message, 
+           v_transaction_id as new_transaction_id;
+END//
+
 -- Procedure to update a budget (with cascading effects)
 CREATE PROCEDURE UpdateBudget(
     IN p_budget_id INT,
