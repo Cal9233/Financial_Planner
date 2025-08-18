@@ -114,18 +114,27 @@ def login():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@auth_bp.route('/logout', methods=['POST'])
-@jwt_required()
+@auth_bp.route('/logout', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)
 def logout():
     """Logout user"""
+    if request.method == 'OPTIONS':
+        return '', 200
     return jsonify({'message': 'Logout successful'}), 200
 
-@auth_bp.route('/refresh', methods=['POST'])
-@jwt_required(refresh=True)
+@auth_bp.route('/refresh', methods=['POST', 'OPTIONS'])
+@jwt_required(refresh=True, optional=True)
 def refresh():
     """Refresh access token"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
+        # Check if we have a valid refresh token
         user_id = get_jwt_identity()
+        if not user_id:
+            return jsonify({'error': 'Invalid refresh token'}), 401
+        
         access_token = create_access_token(identity=user_id)
         
         return jsonify({
@@ -133,7 +142,7 @@ def refresh():
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': str(e)}), 401
 
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()

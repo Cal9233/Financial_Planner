@@ -55,67 +55,11 @@ def get_transactions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@dashboard_bp.route('/accounts', methods=['GET', 'OPTIONS'])
-@jwt_required()
-def get_accounts():
-    """Get user accounts"""
-    if request.method == 'OPTIONS':
-        return '', 200
-    
-    try:
-        user_id = get_jwt_identity()
-        
-        # Get all accounts
-        accounts = Account.get_by_user_id(user_id)
-        account_list = [acc.to_dict() for acc in accounts]
-        
-        # Get total balance
-        total_balance = Account.get_total_balance(user_id)
-        
-        return jsonify({
-            'accounts': account_list,
-            'total': len(account_list),
-            'total_balance': total_balance
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+# Account routes moved to accounts.py
 
-@dashboard_bp.route('/budgets/performance', methods=['GET', 'OPTIONS'])
-@jwt_required()
-def get_budget_performance():
-    """Get budget performance data"""
-    if request.method == 'OPTIONS':
-        return '', 200
-    
-    try:
-        user_id = get_jwt_identity()
-        performance = Budget.get_budget_performance(user_id)
-        return jsonify(performance), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+# Budget performance route moved to budgets.py
 
-@dashboard_bp.route('/goals', methods=['GET', 'OPTIONS'])
-@jwt_required()
-def get_goals():
-    """Get financial goals"""
-    if request.method == 'OPTIONS':
-        return '', 200
-    
-    try:
-        user_id = get_jwt_identity()
-        include_completed = request.args.get('include_completed', 'false').lower() == 'true'
-        
-        goals = FinancialGoal.get_by_user_id(user_id, include_completed)
-        
-        return jsonify({
-            'goals': goals,
-            'total': len(goals)
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+# Goals routes moved to goals.py
 
 @dashboard_bp.route('/categories', methods=['GET', 'OPTIONS'])
 @jwt_required()
@@ -140,33 +84,6 @@ def get_categories():
         return jsonify({'error': str(e)}), 500
 
 # Additional endpoints for creating data
-
-@dashboard_bp.route('/accounts', methods=['POST'])
-@jwt_required()
-def create_account():
-    """Create a new account"""
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-        
-        account = Account(
-            user_id=user_id,
-            account_name=data.get('account_name'),
-            account_type=data.get('account_type'),
-            balance=data.get('balance', 0.00),
-            institution=data.get('institution'),
-            account_number=data.get('account_number')
-        )
-        
-        account.save()
-        
-        return jsonify({
-            'message': 'Account created successfully',
-            'account': account.to_dict()
-        }), 201
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @dashboard_bp.route('/transactions', methods=['POST'])
 @jwt_required()

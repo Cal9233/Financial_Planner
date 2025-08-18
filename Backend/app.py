@@ -10,6 +10,9 @@ from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
 from routes.reports import reports_bp
 from routes.users import users_bp
+from routes.accounts import accounts_bp
+from routes.budgets import budgets_bp
+from routes.goals import goals_bp
 
 def create_app():
     app = Flask(__name__)
@@ -43,6 +46,9 @@ def create_app():
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(accounts_bp)
+    app.register_blueprint(budgets_bp)
+    app.register_blueprint(goals_bp)
     
     # Global OPTIONS handler for CORS preflight
     @app.before_request
