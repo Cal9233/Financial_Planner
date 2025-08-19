@@ -10,22 +10,33 @@ accounts_bp = Blueprint('accounts', __name__, url_prefix='/api/accounts')
 @require_db_connection
 def get_accounts():
     """Get all accounts for user"""
+    print(f"[Accounts] GET /accounts endpoint hit - Method: {request.method}")
     if request.method == 'OPTIONS':
         return '', 200
     
     try:
         user_id = get_jwt_identity()
+        print(f"[Accounts] User ID from JWT: {user_id}")
+        
         accounts = Account.get_by_user_id(user_id)
+        print(f"[Accounts] Retrieved {len(accounts)} accounts")
+        
         account_list = [acc.to_dict() for acc in accounts]
         total_balance = Account.get_total_balance(user_id)
+        print(f"[Accounts] Total balance: {total_balance}")
         
-        return jsonify({
+        response_data = {
             'accounts': account_list,
             'total': len(account_list),
             'total_balance': total_balance
-        }), 200
+        }
+        print(f"[Accounts] Sending response with {len(account_list)} accounts")
+        return jsonify(response_data), 200
         
     except Exception as e:
+        print(f"[Accounts] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @accounts_bp.route('/<int:account_id>', methods=['GET', 'OPTIONS'])

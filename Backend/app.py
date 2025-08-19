@@ -58,7 +58,10 @@ def create_app():
     # Global OPTIONS handler for CORS preflight
     @app.before_request
     def handle_preflight():
+        print(f"[App] Request received: {request.method} {request.path}")
+        print(f"[App] Headers: {dict(request.headers)}")
         if request.method == 'OPTIONS':
+            print("[App] Handling OPTIONS preflight request")
             response = make_response()
             response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
             response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'

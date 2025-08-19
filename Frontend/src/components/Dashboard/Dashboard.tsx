@@ -47,8 +47,17 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const loadDashboardData = async () => {
+    console.log('[Dashboard] Starting to load dashboard data...');
     try {
       setLoading(true);
+      console.log('[Dashboard] Making API calls to:', {
+        summary: '/api/dashboard/summary',
+        accounts: '/api/accounts',
+        transactions: '/api/dashboard/recent-transactions',
+        budgets: '/api/budgets',
+        goals: '/api/goals'
+      });
+      
       const [summaryRes, accountsRes, transactionsRes, budgetsRes, goalsRes] = await Promise.all([
         api.get('/api/dashboard/summary'),
         api.get('/api/accounts'),
@@ -57,6 +66,14 @@ const Dashboard: React.FC = () => {
         api.get('/api/goals'),
       ]);
 
+      console.log('[Dashboard] API responses received:', {
+        summary: summaryRes.data,
+        accounts: accountsRes.data,
+        transactions: transactionsRes.data,
+        budgets: budgetsRes.data,
+        goals: goalsRes.data
+      });
+
       setData({
         summary: summaryRes.data,
         accounts: accountsRes.data.accounts || [],
@@ -64,10 +81,19 @@ const Dashboard: React.FC = () => {
         budgets: budgetsRes.data.budgets || [],
         goals: goalsRes.data.goals || [],
       });
+      
+      console.log('[Dashboard] Data successfully set in state');
     } catch (err: any) {
+      console.error('[Dashboard] Error loading dashboard data:', {
+        error: err,
+        response: err.response,
+        data: err.response?.data,
+        status: err.response?.status
+      });
       setError(err.response?.data?.error || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
+      console.log('[Dashboard] Loading complete');
     }
   };
 
