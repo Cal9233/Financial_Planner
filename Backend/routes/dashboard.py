@@ -21,7 +21,7 @@ def get_dashboard_summary():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         print(f"[Dashboard] User ID from JWT: {user_id}")
         
         # Get transaction summary for current month
@@ -57,7 +57,7 @@ def get_recent_transactions():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         limit = request.args.get('limit', 5, type=int)
         print(f"[Dashboard] Getting recent transactions for user {user_id}, limit: {limit}")
         
@@ -83,7 +83,7 @@ def get_spending_by_category():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         period = request.args.get('period', 'month')
         
         spending = Transaction.get_spending_by_category(user_id, period)
@@ -104,7 +104,7 @@ def get_transaction_summary():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         period = request.args.get('period', 'month')
         
         summary = Transaction.get_transaction_summary(user_id, period)

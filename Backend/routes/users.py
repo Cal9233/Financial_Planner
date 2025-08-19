@@ -14,7 +14,7 @@ def get_profile():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         user = SimpleUser.find_by_id(user_id)
         
         if not user:

@@ -15,7 +15,7 @@ def get_transactions():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         
@@ -54,7 +54,7 @@ def get_transactions():
 def create_transaction():
     """Create a new transaction"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         # Validate required fields
@@ -95,7 +95,7 @@ def get_transaction(id):
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         transaction = Transaction.find_by_id(id)
         
         if not transaction:
@@ -115,7 +115,7 @@ def get_transaction(id):
 def update_transaction(id):
     """Update a transaction"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         transaction = Transaction.find_by_id(id)
         
         if not transaction:
@@ -160,7 +160,7 @@ def update_transaction(id):
 def delete_transaction(id):
     """Delete a transaction"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         transaction = Transaction.find_by_id(id)
         
         if not transaction:

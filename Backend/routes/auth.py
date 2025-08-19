@@ -59,9 +59,9 @@ def register():
         # Create default categories for the new user
         Category.create_default_categories(user.user_id)
         
-        # Create tokens
-        access_token = create_access_token(identity=user.user_id)
-        refresh_token = create_refresh_token(identity=user.user_id)
+        # Create tokens (identity must be string)
+        access_token = create_access_token(identity=str(user.user_id))
+        refresh_token = create_refresh_token(identity=str(user.user_id))
         
         return jsonify({
             'message': 'User registered successfully',
@@ -100,9 +100,9 @@ def login():
         # Update last login
         user.update_last_login()
         
-        # Create tokens
-        access_token = create_access_token(identity=user.user_id)
-        refresh_token = create_refresh_token(identity=user.user_id)
+        # Create tokens (identity must be string)
+        access_token = create_access_token(identity=str(user.user_id))
+        refresh_token = create_refresh_token(identity=str(user.user_id))
         
         return jsonify({
             'message': 'Login successful',
@@ -135,7 +135,7 @@ def refresh():
         if not user_id:
             return jsonify({'error': 'Invalid refresh token'}), 401
         
-        access_token = create_access_token(identity=user_id)
+        access_token = create_access_token(identity=str(user_id))
         
         return jsonify({
             'access_token': access_token
@@ -151,7 +151,7 @@ def get_current_user():
     """Get current user info"""
     try:
         user_id = get_jwt_identity()
-        user = SimpleUser.find_by_id(user_id)
+        user = SimpleUser.find_by_id(int(user_id))
         
         if not user:
             return jsonify({'error': 'User not found'}), 404

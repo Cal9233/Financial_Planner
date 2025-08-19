@@ -15,7 +15,7 @@ def get_budget_performance():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         performance = Budget.get_budget_performance(user_id)
         return jsonify(performance), 200
         
@@ -31,7 +31,7 @@ def get_budgets():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         db = get_db_connection()
         
         if not db.connection:
@@ -76,7 +76,7 @@ def get_budgets():
 def create_budget():
     """Create new budget"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         db = get_db_connection()
         
@@ -127,7 +127,7 @@ def create_budget():
 def update_budget(budget_id):
     """Update budget"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         db = get_db_connection()
         
@@ -165,7 +165,7 @@ def update_budget(budget_id):
 def delete_budget(budget_id):
     """Delete budget"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         db = get_db_connection()
         
         if not db.connection:

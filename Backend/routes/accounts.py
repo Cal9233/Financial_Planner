@@ -15,7 +15,7 @@ def get_accounts():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         print(f"[Accounts] User ID from JWT: {user_id}")
         
         accounts = Account.get_by_user_id(user_id)
@@ -48,7 +48,7 @@ def get_account(account_id):
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         accounts = Account.get_by_user_id(user_id)
         
         for acc in accounts:
@@ -66,7 +66,7 @@ def get_account(account_id):
 def create_account():
     """Create new account"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         account = Account(
@@ -94,7 +94,7 @@ def create_account():
 def update_account(account_id):
     """Update account"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         accounts = Account.get_by_user_id(user_id)
@@ -133,7 +133,7 @@ def update_account(account_id):
 def delete_account(account_id):
     """Delete account (soft delete)"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         accounts = Account.get_by_user_id(user_id)
         
         for acc in accounts:

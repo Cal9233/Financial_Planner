@@ -16,7 +16,7 @@ def get_goals():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         include_completed = request.args.get('include_completed', 'false').lower() == 'true'
         
         goals = FinancialGoal.get_by_user_id(user_id, include_completed)
@@ -38,7 +38,7 @@ def get_goal(goal_id):
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         goals = FinancialGoal.get_by_user_id(user_id, include_completed=True)
         
         for goal in goals:
@@ -56,7 +56,7 @@ def get_goal(goal_id):
 def create_goal():
     """Create new goal"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         db = get_db_connection()
         
@@ -98,7 +98,7 @@ def create_goal():
 def update_goal(goal_id):
     """Update goal"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         db = get_db_connection()
         
@@ -163,7 +163,7 @@ def update_goal(goal_id):
 def delete_goal(goal_id):
     """Delete goal"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         db = get_db_connection()
         
         if not db.connection:
@@ -192,7 +192,7 @@ def delete_goal(goal_id):
 def update_goal_progress(goal_id):
     """Update goal progress (current amount)"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         db = get_db_connection()
         

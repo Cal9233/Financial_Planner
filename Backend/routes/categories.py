@@ -15,7 +15,7 @@ def get_categories():
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         category_type = request.args.get('type')  # 'income', 'expense', or None for all
         
         categories = Category.get_by_user_id(user_id, type=category_type)
@@ -38,7 +38,7 @@ def get_category(category_id):
         return '', 200
     
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         categories = Category.get_by_user_id(user_id)
         
         for cat in categories:
@@ -56,7 +56,7 @@ def get_category(category_id):
 def create_category():
     """Create new category"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         # Validate required fields
@@ -89,7 +89,7 @@ def create_category():
 def update_category(category_id):
     """Update category"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json()
         
         categories = Category.get_by_user_id(user_id)
@@ -124,7 +124,7 @@ def update_category(category_id):
 def delete_category(category_id):
     """Delete category (soft delete)"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         db = get_db_connection()
         
         if not db.connection:
@@ -184,7 +184,7 @@ def delete_category(category_id):
 def create_default_categories():
     """Create default categories for user"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         
         # Check if user already has categories
         existing = Category.get_by_user_id(user_id)
