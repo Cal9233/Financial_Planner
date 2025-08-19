@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from config.db import get_db_connection
 
 class Transaction:
@@ -6,18 +6,19 @@ class Transaction:
     
     def __init__(self, transaction_id=None, user_id=None, account_id=None,
                  category_id=None, transaction_date=None, amount=0.00,
-                 transaction_type=None, description=None, reference_number=None,
-                 is_recurring=False, created_at=None, updated_at=None):
+                 transaction_type=None, description=None, status='completed',
+                 notes=None, created_at=None, updated_at=None, transaction_time=None):
         self.transaction_id = transaction_id
         self.user_id = user_id
         self.account_id = account_id
         self.category_id = category_id
         self.transaction_date = transaction_date
+        self.transaction_time = transaction_time
         self.amount = float(amount) if amount else 0.00
         self.transaction_type = transaction_type
         self.description = description
-        self.reference_number = reference_number
-        self.is_recurring = is_recurring
+        self.status = status
+        self.notes = notes
         self.created_at = created_at
         self.updated_at = updated_at
     
@@ -29,11 +30,12 @@ class Transaction:
             'account_id': self.account_id,
             'category_id': self.category_id,
             'transaction_date': self.transaction_date.isoformat() if isinstance(self.transaction_date, date) else self.transaction_date,
+            'transaction_time': self.transaction_time,
             'amount': self.amount,
             'transaction_type': self.transaction_type,
             'description': self.description,
-            'reference_number': self.reference_number,
-            'is_recurring': self.is_recurring,
+            'status': self.status,
+            'notes': self.notes,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
@@ -48,30 +50,31 @@ class Transaction:
             if self.transaction_id:
                 # Update existing transaction
                 query = """
-                    UPDATE Transactions 
-                    SET account_id=%s, category_id=%s, transaction_date=%s,
-                        amount=%s, transaction_type=%s, description=%s,
-                        reference_number=%s, is_recurring=%s
-                    WHERE transaction_id=%s AND user_id=%s
+                    UPDATE Transactions t
+                    JOIN Accounts a ON t.account_id = a.account_id
+                    SET t.account_id=%s, t.category_id=%s, t.transaction_date=%s,
+                        t.transaction_time=%s, t.amount=%s, t.transaction_type=%s,
+                        t.description=%s, t.status=%s, t.notes=%s
+                    WHERE t.transaction_id=%s AND a.user_id=%s
                 """
                 db.execute(query, (
                     self.account_id, self.category_id, self.transaction_date,
-                    self.amount, self.transaction_type, self.description,
-                    self.reference_number, self.is_recurring,
+                    self.transaction_time, self.amount, self.transaction_type,
+                    self.description, self.status, self.notes,
                     self.transaction_id, self.user_id
                 ))
             else:
                 # Insert new transaction
                 query = """
-                    INSERT INTO Transactions (user_id, account_id, category_id,
-                                            transaction_date, amount, transaction_type,
-                                            description, reference_number, is_recurring)
+                    INSERT INTO Transactions (account_id, category_id,
+                                            transaction_date, transaction_time, amount,
+                                            transaction_type, description, status, notes)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
                 db.execute(query, (
-                    self.user_id, self.account_id, self.category_id,
-                    self.transaction_date, self.amount, self.transaction_type,
-                    self.description, self.reference_number, self.is_recurring
+                    self.account_id, self.category_id,
+                    self.transaction_date, self.transaction_time, self.amount,
+                    self.transaction_type, self.description, self.status, self.notes
                 ))
                 self.transaction_id = db.cursor.lastrowid
             
@@ -91,11 +94,11 @@ class Transaction:
         
         try:
             query = """
-                SELECT t.*, a.account_name, c.category_name
+                SELECT t.*, a.account_name, c.category_name, a.user_id
                 FROM Transactions t
                 LEFT JOIN Accounts a ON t.account_id = a.account_id
                 LEFT JOIN Categories c ON t.category_id = c.category_id
-                WHERE t.user_id = %s
+                WHERE a.user_id = %s
                 ORDER BY t.transaction_date DESC, t.created_at DESC
                 LIMIT %s OFFSET %s
             """
@@ -104,24 +107,22 @@ class Transaction:
             
             transactions = []
             for row in rows:
-                trans = Transaction(
-                    transaction_id=row['transaction_id'],
-                    user_id=row['user_id'],
-                    account_id=row['account_id'],
-                    category_id=row['category_id'],
-                    transaction_date=row['transaction_date'],
-                    amount=row['amount'],
-                    transaction_type=row['transaction_type'],
-                    description=row['description'],
-                    reference_number=row['reference_number'],
-                    is_recurring=row['is_recurring'],
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at']
-                )
-                # Add extra fields for display
-                trans_dict = trans.to_dict()
-                trans_dict['account_name'] = row['account_name']
-                trans_dict['category_name'] = row['category_name']
+                trans_dict = {
+                    'transaction_id': row['transaction_id'],
+                    'user_id': row['user_id'],  # From join with accounts
+                    'account_id': row['account_id'],
+                    'category_id': row['category_id'],
+                    'transaction_date': row['transaction_date'].isoformat() if row['transaction_date'] else None,
+                    'amount': float(row['amount']),
+                    'transaction_type': row['transaction_type'],
+                    'description': row.get('description', ''),
+                    'status': row.get('status', 'completed'),
+                    'notes': row.get('notes', ''),
+                    'created_at': row['created_at'].isoformat() if row.get('created_at') else None,
+                    'updated_at': row['updated_at'].isoformat() if row.get('updated_at') else None,
+                    'account_name': row['account_name'],
+                    'category_name': row['category_name']
+                }
                 transactions.append(trans_dict)
             
             return transactions
@@ -149,38 +150,42 @@ class Transaction:
             if period == 'month':
                 current_query = """
                     SELECT 
-                        SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as income,
-                        SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as expense
-                    FROM Transactions
-                    WHERE user_id = %s 
-                    AND MONTH(transaction_date) = MONTH(CURRENT_DATE())
-                    AND YEAR(transaction_date) = YEAR(CURRENT_DATE())
+                        SUM(CASE WHEN t.transaction_type = 'income' THEN t.amount ELSE 0 END) as income,
+                        SUM(CASE WHEN t.transaction_type = 'expense' THEN ABS(t.amount) ELSE 0 END) as expense
+                    FROM Transactions t
+                    JOIN Accounts a ON t.account_id = a.account_id
+                    WHERE a.user_id = %s 
+                    AND MONTH(t.transaction_date) = MONTH(CURRENT_DATE())
+                    AND YEAR(t.transaction_date) = YEAR(CURRENT_DATE())
                 """
                 previous_query = """
                     SELECT 
-                        SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as income,
-                        SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as expense
-                    FROM Transactions
-                    WHERE user_id = %s 
-                    AND MONTH(transaction_date) = MONTH(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH))
-                    AND YEAR(transaction_date) = YEAR(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH))
+                        SUM(CASE WHEN t.transaction_type = 'income' THEN t.amount ELSE 0 END) as income,
+                        SUM(CASE WHEN t.transaction_type = 'expense' THEN t.amount ELSE 0 END) as expense
+                    FROM Transactions t
+                    JOIN Accounts a ON t.account_id = a.account_id
+                    WHERE a.user_id = %s 
+                    AND MONTH(t.transaction_date) = MONTH(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH))
+                    AND YEAR(t.transaction_date) = YEAR(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH))
                 """
             else:  # Default to year
                 current_query = """
                     SELECT 
-                        SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as income,
-                        SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as expense
-                    FROM Transactions
-                    WHERE user_id = %s 
-                    AND YEAR(transaction_date) = YEAR(CURRENT_DATE())
+                        SUM(CASE WHEN t.transaction_type = 'income' THEN t.amount ELSE 0 END) as income,
+                        SUM(CASE WHEN t.transaction_type = 'expense' THEN t.amount ELSE 0 END) as expense
+                    FROM Transactions t
+                    JOIN Accounts a ON t.account_id = a.account_id
+                    WHERE a.user_id = %s 
+                    AND YEAR(t.transaction_date) = YEAR(CURRENT_DATE())
                 """
                 previous_query = """
                     SELECT 
-                        SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as income,
-                        SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as expense
-                    FROM Transactions
-                    WHERE user_id = %s 
-                    AND YEAR(transaction_date) = YEAR(DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))
+                        SUM(CASE WHEN t.transaction_type = 'income' THEN t.amount ELSE 0 END) as income,
+                        SUM(CASE WHEN t.transaction_type = 'expense' THEN t.amount ELSE 0 END) as expense
+                    FROM Transactions t
+                    JOIN Accounts a ON t.account_id = a.account_id
+                    WHERE a.user_id = %s 
+                    AND YEAR(t.transaction_date) = YEAR(DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))
                 """
             
             # Get current period
@@ -232,7 +237,12 @@ class Transaction:
             return 0
         
         try:
-            query = "SELECT COUNT(*) as count FROM Transactions WHERE user_id = %s"
+            query = """
+                SELECT COUNT(*) as count 
+                FROM Transactions t
+                JOIN Accounts a ON t.account_id = a.account_id
+                WHERE a.user_id = %s
+            """
             db.execute(query, (user_id,))
             result = db.fetchone()
             return result['count'] if result else 0
@@ -305,17 +315,19 @@ class Transaction:
                     SUM(t.amount) as total_amount,
                     COUNT(t.transaction_id) as transaction_count
                 FROM Categories c
-                LEFT JOIN Transactions t ON c.category_id = t.category_id 
-                    AND t.user_id = %s 
-                    AND t.transaction_date BETWEEN %s AND %s
-                    AND t.transaction_type = 'expense'
-                WHERE c.user_id = %s OR c.is_default = 1
+                LEFT JOIN Transactions t ON c.category_id = t.category_id
+                LEFT JOIN Accounts a ON t.account_id = a.account_id
+                WHERE (c.user_id = %s OR c.is_default = 1)
+                    AND (t.transaction_id IS NULL OR 
+                         (a.user_id = %s 
+                          AND t.transaction_date BETWEEN %s AND %s
+                          AND t.transaction_type = 'expense'))
                 GROUP BY c.category_id, c.category_name, c.category_type, c.icon
                 HAVING total_amount > 0
                 ORDER BY total_amount DESC
             """
             
-            db.execute(query, (user_id, start_date, end_date, user_id))
+            db.execute(query, (user_id, user_id, start_date, end_date))
             results = db.fetchall()
             
             categories = []
@@ -344,11 +356,11 @@ class Transaction:
         
         try:
             query = """
-                SELECT t.*, a.account_name, c.category_name
+                SELECT t.*, a.account_name, c.category_name, a.user_id
                 FROM Transactions t
                 LEFT JOIN Accounts a ON t.account_id = a.account_id
                 LEFT JOIN Categories c ON t.category_id = c.category_id
-                WHERE t.transaction_id = %s AND t.user_id = %s
+                WHERE t.transaction_id = %s AND a.user_id = %s
             """
             db.execute(query, (transaction_id, user_id))
             row = db.fetchone()
@@ -360,11 +372,12 @@ class Transaction:
                     account_id=row['account_id'],
                     category_id=row['category_id'],
                     transaction_date=row['transaction_date'],
+                    transaction_time=row.get('transaction_time'),
                     amount=row['amount'],
                     transaction_type=row['transaction_type'],
-                    description=row['description'],
-                    reference_number=row['reference_number'],
-                    is_recurring=row['is_recurring'],
+                    description=row.get('description'),
+                    status=row.get('status', 'completed'),
+                    notes=row.get('notes'),
                     created_at=row['created_at'],
                     updated_at=row['updated_at']
                 )
@@ -382,7 +395,11 @@ class Transaction:
             raise Exception("No database connection")
         
         try:
-            query = "DELETE FROM Transactions WHERE transaction_id = %s AND user_id = %s"
+            query = """
+                DELETE t FROM Transactions t
+                JOIN Accounts a ON t.account_id = a.account_id
+                WHERE t.transaction_id = %s AND a.user_id = %s
+            """
             db.execute(query, (self.transaction_id, self.user_id))
             db.commit()
             return True

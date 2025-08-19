@@ -21,18 +21,25 @@ def connect_database():
         
         # Test connection
         test_db = SimpleDBConnection()
-        success = test_db.connect(
-            host=data.get('host', 'localhost'),
-            user=data.get('user'),
-            password=data.get('password'),
-            database=data.get('database'),
-            port=int(data.get('port', 3306))
-        )
-        
-        if not success:
+        try:
+            success = test_db.connect(
+                host=data.get('host', 'localhost'),
+                user=data.get('user'),
+                password=data.get('password'),
+                database=data.get('database'),
+                port=int(data.get('port', 3306))
+            )
+            
+            if not success:
+                return jsonify({
+                    'connected': False,
+                    'error': 'Failed to connect to database'
+                }), 400
+        except Exception as e:
+            print(f"[Database] Connection test failed: {e}")
             return jsonify({
                 'connected': False,
-                'error': 'Failed to connect to database'
+                'error': f'Connection failed: {str(e)}'
             }), 400
         
         # Store connection info in session

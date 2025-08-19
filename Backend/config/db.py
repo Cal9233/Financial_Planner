@@ -29,22 +29,9 @@ class SimpleDBConnection:
     def execute(self, query, params=None):
         """Execute a query"""
         try:
-            # Check if cursor exists and is connected
-            if not self.cursor or not self.connection or not self.connection.is_connected():
-                print("Database connection lost, attempting to reconnect...")
-                # Try to reconnect using session config if available
-                from flask import session
-                if 'db_config' in session:
-                    config = session['db_config']
-                    self.connect(
-                        host=config.get('host', 'localhost'),
-                        user=config.get('user'),
-                        password=config.get('password'),
-                        database=config.get('database'),
-                        port=config.get('port', 3306)
-                    )
-                else:
-                    raise Exception("No database configuration found in session")
+            # Simply check if we have a cursor
+            if not self.cursor:
+                raise Exception("No database cursor available. Please ensure database is connected.")
             
             if params:
                 self.cursor.execute(query, params)
@@ -57,11 +44,23 @@ class SimpleDBConnection:
     
     def fetchone(self):
         """Fetch one result"""
-        return self.cursor.fetchone()
+        if not self.cursor:
+            raise Exception("No cursor available - query may not have been executed")
+        try:
+            return self.cursor.fetchone()
+        except mysql.connector.Error as err:
+            print(f"Fetchone error: {err}")
+            raise err
     
     def fetchall(self):
         """Fetch all results"""
-        return self.cursor.fetchall()
+        if not self.cursor:
+            raise Exception("No cursor available - query may not have been executed")
+        try:
+            return self.cursor.fetchall()
+        except mysql.connector.Error as err:
+            print(f"Fetchall error: {err}")
+            raise err
     
     def commit(self):
         """Commit transaction"""

@@ -4,20 +4,9 @@ from datetime import datetime
 from models.user import SimpleUser
 from models.category import Category
 from config.db import get_db_connection
+from utils.decorators import require_db_connection
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
-
-def require_db_connection(f):
-    """Simple decorator to check database connection"""
-    from functools import wraps
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if request.method == 'OPTIONS':
-            return '', 200
-        if 'db_config' not in session:
-            return jsonify({'error': 'Database connection required'}), 401
-        return f(*args, **kwargs)
-    return decorated_function
 
 @auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 @require_db_connection
