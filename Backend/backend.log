@@ -213,3 +213,27 @@ Database connection error: 2003: Can't connect to MySQL server on 'localhost:330
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 102-849-545
+ * Detected change in '/var/www/cal.lueshub.com/CSC6302_Final/Backend/models/transaction.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-849-545
+ * Detected change in '/var/www/cal.lueshub.com/CSC6302_Final/Backend/models/transaction.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-849-545
+ * Detected change in '/var/www/cal.lueshub.com/CSC6302_Final/Backend/models/budget.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-849-545
+ * Detected change in '/var/www/cal.lueshub.com/CSC6302_Final/Backend/routes/budgets.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-849-545
+ * Detected change in '/var/www/cal.lueshub.com/CSC6302_Final/Backend/routes/reports.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-849-545
+ * Detected change in '/var/www/cal.lueshub.com/CSC6302_Final/Backend/models/transaction.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-849-545

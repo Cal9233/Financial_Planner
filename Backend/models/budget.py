@@ -51,7 +51,7 @@ class Budget:
                 SELECT 
                     b.budget_id,
                     b.category_id,
-                    c.name as category_name,
+                    c.category_name,
                     b.budget_amount,
                     COALESCE(SUM(
                         CASE 
@@ -70,8 +70,8 @@ class Budget:
                     AND b.is_active = TRUE 
                     AND b.period_type = 'monthly'
                     AND (b.end_date IS NULL OR b.end_date >= CURRENT_DATE())
-                GROUP BY b.budget_id, b.category_id, c.name, b.budget_amount
-                ORDER BY c.name
+                GROUP BY b.budget_id, b.category_id, c.category_name, b.budget_amount
+                ORDER BY c.category_name
             """
             
             db.execute(query, (user_id,))

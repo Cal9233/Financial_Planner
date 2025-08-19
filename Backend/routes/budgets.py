@@ -38,11 +38,11 @@ def get_budgets():
             return jsonify({'error': 'No database connection'}), 500
         
         query = """
-            SELECT b.*, c.name as category_name, c.type as category_type
+            SELECT b.*, c.category_name as category_name, c.category_type as category_type
             FROM Budgets b
             INNER JOIN Categories c ON b.category_id = c.category_id
             WHERE b.user_id = %s AND b.is_active = TRUE
-            ORDER BY c.name
+            ORDER BY c.category_name
         """
         
         db.execute(query, (user_id,))

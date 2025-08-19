@@ -91,7 +91,7 @@ class Transaction:
         
         try:
             query = """
-                SELECT t.*, a.account_name, c.name as category_name
+                SELECT t.*, a.account_name, c.category_name
                 FROM Transactions t
                 LEFT JOIN Accounts a ON t.account_id = a.account_id
                 LEFT JOIN Categories c ON t.category_id = c.category_id
@@ -251,11 +251,12 @@ class Transaction:
         try:
             query = """
                 SELECT 
-                    SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as total_income,
-                    SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as total_expenses,
+                    SUM(CASE WHEN t.transaction_type = 'income' THEN t.amount ELSE 0 END) as total_income,
+                    SUM(CASE WHEN t.transaction_type = 'expense' THEN ABS(t.amount) ELSE 0 END) as total_expenses,
                     COUNT(*) as transaction_count
-                FROM Transactions 
-                WHERE user_id = %s AND transaction_date BETWEEN %s AND %s
+                FROM Transactions t
+                JOIN Accounts a ON t.account_id = a.account_id
+                WHERE a.user_id = %s AND t.transaction_date BETWEEN %s AND %s
             """
             db.execute(query, (user_id, start_date, end_date))
             result = db.fetchone()
@@ -343,7 +344,7 @@ class Transaction:
         
         try:
             query = """
-                SELECT t.*, a.account_name, c.name as category_name
+                SELECT t.*, a.account_name, c.category_name
                 FROM Transactions t
                 LEFT JOIN Accounts a ON t.account_id = a.account_id
                 LEFT JOIN Categories c ON t.category_id = c.category_id

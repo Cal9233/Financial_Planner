@@ -22,8 +22,8 @@ def get_monthly_report(year, month):
         # Get spending by category for the specified month
         query = """
             SELECT 
-                c.name as category_name,
-                c.type as category_type,
+                c.category_name as category_name,
+                c.category_type as category_type,
                 SUM(t.amount) as total
             FROM Transactions t
             INNER JOIN Categories c ON t.category_id = c.category_id
@@ -31,7 +31,7 @@ def get_monthly_report(year, month):
                 AND YEAR(t.transaction_date) = %s 
                 AND MONTH(t.transaction_date) = %s
                 AND t.transaction_type = 'expense'
-            GROUP BY c.category_id, c.name, c.type
+            GROUP BY c.category_id, c.category_name, c.category_type
             ORDER BY total DESC
         """
         
@@ -206,14 +206,14 @@ def get_expense_trends():
         query = """
             SELECT 
                 DATE_FORMAT(t.transaction_date, '%Y-%m') as month,
-                c.name as category_name,
+                c.category_name as category_name,
                 SUM(t.amount) as total
             FROM Transactions t
             INNER JOIN Categories c ON t.category_id = c.category_id
             WHERE t.user_id = %s 
                 AND t.transaction_type = 'expense'
                 AND t.transaction_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
-            GROUP BY DATE_FORMAT(t.transaction_date, '%Y-%m'), c.category_id, c.name
+            GROUP BY DATE_FORMAT(t.transaction_date, '%Y-%m'), c.category_id, c.category_name
             ORDER BY month, total DESC
         """
         
