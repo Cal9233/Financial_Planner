@@ -2,11 +2,13 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.transaction import Transaction
 from datetime import datetime
+from utils.decorators import require_db_connection
 
 transactions_bp = Blueprint('transactions', __name__, url_prefix='/api/transactions')
 
 @transactions_bp.route('', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_transactions():
     """Get all transactions for the current user"""
     if request.method == 'OPTIONS':
@@ -48,6 +50,7 @@ def get_transactions():
 
 @transactions_bp.route('', methods=['POST'])
 @jwt_required()
+@require_db_connection
 def create_transaction():
     """Create a new transaction"""
     try:
@@ -85,6 +88,7 @@ def create_transaction():
 
 @transactions_bp.route('/<int:id>', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_transaction(id):
     """Get a specific transaction"""
     if request.method == 'OPTIONS':
@@ -107,6 +111,7 @@ def get_transaction(id):
 
 @transactions_bp.route('/<int:id>', methods=['PUT'])
 @jwt_required()
+@require_db_connection
 def update_transaction(id):
     """Update a transaction"""
     try:
@@ -151,6 +156,7 @@ def update_transaction(id):
 
 @transactions_bp.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
+@require_db_connection
 def delete_transaction(id):
     """Delete a transaction"""
     try:

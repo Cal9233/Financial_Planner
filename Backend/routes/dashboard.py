@@ -6,11 +6,13 @@ from models.account import Account
 from models.category import Category
 from models.budget import Budget
 from models.goal import FinancialGoal
+from utils.decorators import require_db_connection
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/api/dashboard')
 
 @dashboard_bp.route('/summary', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_dashboard_summary():
     """Get dashboard summary data"""
     if request.method == 'OPTIONS':
@@ -37,6 +39,7 @@ def get_dashboard_summary():
 
 @dashboard_bp.route('/recent-transactions', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_recent_transactions():
     """Get recent transactions for dashboard"""
     if request.method == 'OPTIONS':
@@ -57,6 +60,7 @@ def get_recent_transactions():
 
 @dashboard_bp.route('/spending-by-category', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_spending_by_category():
     """Get spending breakdown by category"""
     if request.method == 'OPTIONS':
@@ -77,6 +81,7 @@ def get_spending_by_category():
 
 @dashboard_bp.route('/transactions/summary', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_transaction_summary():
     """Get transaction summary for dashboard"""
     if request.method == 'OPTIONS':

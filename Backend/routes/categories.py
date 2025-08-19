@@ -2,11 +2,13 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.category import Category
 from config.db import get_db_connection
+from utils.decorators import require_db_connection
 
 categories_bp = Blueprint('categories', __name__, url_prefix='/api/categories')
 
 @categories_bp.route('', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_categories():
     """Get all categories for user"""
     if request.method == 'OPTIONS':
@@ -29,6 +31,7 @@ def get_categories():
 
 @categories_bp.route('/<int:category_id>', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_category(category_id):
     """Get specific category"""
     if request.method == 'OPTIONS':
@@ -49,6 +52,7 @@ def get_category(category_id):
 
 @categories_bp.route('', methods=['POST'])
 @jwt_required()
+@require_db_connection
 def create_category():
     """Create new category"""
     try:
@@ -81,6 +85,7 @@ def create_category():
 
 @categories_bp.route('/<int:category_id>', methods=['PUT'])
 @jwt_required()
+@require_db_connection
 def update_category(category_id):
     """Update category"""
     try:
@@ -115,6 +120,7 @@ def update_category(category_id):
 
 @categories_bp.route('/<int:category_id>', methods=['DELETE'])
 @jwt_required()
+@require_db_connection
 def delete_category(category_id):
     """Delete category (soft delete)"""
     try:
@@ -174,6 +180,7 @@ def delete_category(category_id):
 
 @categories_bp.route('/batch', methods=['POST'])
 @jwt_required()
+@require_db_connection
 def create_default_categories():
     """Create default categories for user"""
     try:

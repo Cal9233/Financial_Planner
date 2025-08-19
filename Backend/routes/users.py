@@ -1,11 +1,13 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.user import SimpleUser
+from utils.decorators import require_db_connection
 
 users_bp = Blueprint('users', __name__, url_prefix='/api/users')
 
 @users_bp.route('/profile', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_profile():
     """Get current user profile"""
     if request.method == 'OPTIONS':

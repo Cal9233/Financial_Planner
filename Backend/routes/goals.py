@@ -3,11 +3,13 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.goal import FinancialGoal
 from config.db import get_db_connection
 from datetime import datetime
+from utils.decorators import require_db_connection
 
 goals_bp = Blueprint('goals', __name__, url_prefix='/api/goals')
 
 @goals_bp.route('', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_goals():
     """Get all goals for user"""
     if request.method == 'OPTIONS':
@@ -29,6 +31,7 @@ def get_goals():
 
 @goals_bp.route('/<int:goal_id>', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_goal(goal_id):
     """Get specific goal"""
     if request.method == 'OPTIONS':
@@ -49,6 +52,7 @@ def get_goal(goal_id):
 
 @goals_bp.route('', methods=['POST'])
 @jwt_required()
+@require_db_connection
 def create_goal():
     """Create new goal"""
     try:
@@ -90,6 +94,7 @@ def create_goal():
 
 @goals_bp.route('/<int:goal_id>', methods=['PUT'])
 @jwt_required()
+@require_db_connection
 def update_goal(goal_id):
     """Update goal"""
     try:
@@ -154,6 +159,7 @@ def update_goal(goal_id):
 
 @goals_bp.route('/<int:goal_id>', methods=['DELETE'])
 @jwt_required()
+@require_db_connection
 def delete_goal(goal_id):
     """Delete goal"""
     try:
@@ -182,6 +188,7 @@ def delete_goal(goal_id):
 
 @goals_bp.route('/<int:goal_id>/progress', methods=['PUT'])
 @jwt_required()
+@require_db_connection
 def update_goal_progress(goal_id):
     """Update goal progress (current amount)"""
     try:

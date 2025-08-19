@@ -2,11 +2,13 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.budget import Budget
 from config.db import get_db_connection
+from utils.decorators import require_db_connection
 
 budgets_bp = Blueprint('budgets', __name__, url_prefix='/api/budgets')
 
 @budgets_bp.route('/performance', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_budget_performance():
     """Get budget performance data"""
     if request.method == 'OPTIONS':
@@ -22,6 +24,7 @@ def get_budget_performance():
 
 @budgets_bp.route('', methods=['GET', 'OPTIONS'])
 @jwt_required()
+@require_db_connection
 def get_budgets():
     """Get all budgets for user"""
     if request.method == 'OPTIONS':
@@ -69,6 +72,7 @@ def get_budgets():
 
 @budgets_bp.route('', methods=['POST'])
 @jwt_required()
+@require_db_connection
 def create_budget():
     """Create new budget"""
     try:
@@ -119,6 +123,7 @@ def create_budget():
 
 @budgets_bp.route('/<int:budget_id>', methods=['PUT'])
 @jwt_required()
+@require_db_connection
 def update_budget(budget_id):
     """Update budget"""
     try:
@@ -156,6 +161,7 @@ def update_budget(budget_id):
 
 @budgets_bp.route('/<int:budget_id>', methods=['DELETE'])
 @jwt_required()
+@require_db_connection
 def delete_budget(budget_id):
     """Delete budget"""
     try:
