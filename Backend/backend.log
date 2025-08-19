@@ -237,3 +237,15 @@ Database connection error: 2003: Can't connect to MySQL server on 'localhost:330
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 102-849-545
+ * Detected change in '/var/www/cal.lueshub.com/CSC6302_Final/Backend/config/db.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-849-545
+ * Detected change in '/var/www/cal.lueshub.com/CSC6302_Final/Backend/config/db.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-849-545
+ * Detected change in '/var/www/cal.lueshub.com/CSC6302_Final/Backend/routes/database.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 102-849-545
