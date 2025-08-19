@@ -94,11 +94,11 @@ class Transaction:
         
         try:
             query = """
-                SELECT t.*, a.account_name, c.category_name, a.user_id
+                SELECT t.*, a.account_name, c.name as category_name
                 FROM Transactions t
                 LEFT JOIN Accounts a ON t.account_id = a.account_id
                 LEFT JOIN Categories c ON t.category_id = c.category_id
-                WHERE a.user_id = %s
+                WHERE t.user_id = %s
                 ORDER BY t.transaction_date DESC, t.created_at DESC
                 LIMIT %s OFFSET %s
             """
@@ -107,22 +107,24 @@ class Transaction:
             
             transactions = []
             for row in rows:
-                trans_dict = {
-                    'transaction_id': row['transaction_id'],
-                    'user_id': row['user_id'],  # From join with accounts
-                    'account_id': row['account_id'],
-                    'category_id': row['category_id'],
-                    'transaction_date': row['transaction_date'].isoformat() if row['transaction_date'] else None,
-                    'amount': float(row['amount']),
-                    'transaction_type': row['transaction_type'],
-                    'description': row.get('description', ''),
-                    'status': row.get('status', 'completed'),
-                    'notes': row.get('notes', ''),
-                    'created_at': row['created_at'].isoformat() if row.get('created_at') else None,
-                    'updated_at': row['updated_at'].isoformat() if row.get('updated_at') else None,
-                    'account_name': row['account_name'],
-                    'category_name': row['category_name']
-                }
+                trans = Transaction(
+                    transaction_id=row['transaction_id'],
+                    user_id=row['user_id'],
+                    account_id=row['account_id'],
+                    category_id=row['category_id'],
+                    transaction_date=row['transaction_date'],
+                    amount=row['amount'],
+                    transaction_type=row['transaction_type'],
+                    description=row['description'],
+                    reference_number=row['reference_number'],
+                    is_recurring=row['is_recurring'],
+                    created_at=row['created_at'],
+                    updated_at=row['updated_at']
+                )
+                # Add extra fields for display
+                trans_dict = trans.to_dict()
+                trans_dict['account_name'] = row['account_name']
+                trans_dict['category_name'] = row['category_name']
                 transactions.append(trans_dict)
             
             return transactions
@@ -261,12 +263,11 @@ class Transaction:
         try:
             query = """
                 SELECT 
-                    SUM(CASE WHEN t.transaction_type = 'income' THEN t.amount ELSE 0 END) as total_income,
-                    SUM(CASE WHEN t.transaction_type = 'expense' THEN ABS(t.amount) ELSE 0 END) as total_expenses,
+                    SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as total_income,
+                    SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as total_expenses,
                     COUNT(*) as transaction_count
-                FROM Transactions t
-                JOIN Accounts a ON t.account_id = a.account_id
-                WHERE a.user_id = %s AND t.transaction_date BETWEEN %s AND %s
+                FROM Transactions 
+                WHERE user_id = %s AND transaction_date BETWEEN %s AND %s
             """
             db.execute(query, (user_id, start_date, end_date))
             result = db.fetchone()

@@ -21,25 +21,18 @@ def connect_database():
         
         # Test connection
         test_db = SimpleDBConnection()
-        try:
-            success = test_db.connect(
-                host=data.get('host', 'localhost'),
-                user=data.get('user'),
-                password=data.get('password'),
-                database=data.get('database'),
-                port=int(data.get('port', 3306))
-            )
-            
-            if not success:
-                return jsonify({
-                    'connected': False,
-                    'error': 'Failed to connect to database'
-                }), 400
-        except Exception as e:
-            print(f"[Database] Connection test failed: {e}")
+        success = test_db.connect(
+            host=data.get('host', 'localhost'),
+            user=data.get('user'),
+            password=data.get('password'),
+            database=data.get('database'),
+            port=int(data.get('port', 3306))
+        )
+        
+        if not success:
             return jsonify({
                 'connected': False,
-                'error': f'Connection failed: {str(e)}'
+                'error': 'Failed to connect to database'
             }), 400
         
         # Store connection info in session
@@ -97,40 +90,26 @@ def database_status():
     if request.method == 'OPTIONS':
         return '', 200
     
-    print(f"[Database] Status check - Session keys: {list(session.keys())}")
-    print(f"[Database] db_config in session: {'db_config' in session}")
-    
     try:
         is_connected = session.get('db_connected', False)
-        db_config = session.get('db_config', {})
-        
-        print(f"[Database] Initial is_connected: {is_connected}")
-        print(f"[Database] DB Config: {db_config.get('database') if db_config else 'None'}")
         
         # Try to ping the database if we think we're connected
-        if is_connected and db_config:
+        if is_connected:
             db = get_db_connection()
             if db.connection:
                 try:
                     db.connection.ping(reconnect=True)
-                    print("[Database] Ping successful")
-                except Exception as e:
-                    print(f"[Database] Ping failed: {e}")
+                except:
                     is_connected = False
             else:
-                print("[Database] No connection object")
                 is_connected = False
         
-        response = {
+        return jsonify({
             'connected': is_connected,
-            'database': db_config.get('database') if is_connected else None
-        }
-        print(f"[Database] Returning status: {response}")
-        
-        return jsonify(response), 200
+            'database': session.get('db_config', {}).get('database') if is_connected else None
+        }), 200
         
     except Exception as e:
-        print(f"[Database] Status check error: {e}")
         return jsonify({
             'connected': False,
             'error': str(e)

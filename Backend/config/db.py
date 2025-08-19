@@ -29,10 +29,6 @@ class SimpleDBConnection:
     def execute(self, query, params=None):
         """Execute a query"""
         try:
-            # Simply check if we have a cursor
-            if not self.cursor:
-                raise Exception("No database cursor available. Please ensure database is connected.")
-            
             if params:
                 self.cursor.execute(query, params)
             else:
@@ -44,23 +40,11 @@ class SimpleDBConnection:
     
     def fetchone(self):
         """Fetch one result"""
-        if not self.cursor:
-            raise Exception("No cursor available - query may not have been executed")
-        try:
-            return self.cursor.fetchone()
-        except mysql.connector.Error as err:
-            print(f"Fetchone error: {err}")
-            raise err
+        return self.cursor.fetchone()
     
     def fetchall(self):
         """Fetch all results"""
-        if not self.cursor:
-            raise Exception("No cursor available - query may not have been executed")
-        try:
-            return self.cursor.fetchall()
-        except mysql.connector.Error as err:
-            print(f"Fetchall error: {err}")
-            raise err
+        return self.cursor.fetchall()
     
     def commit(self):
         """Commit transaction"""
@@ -98,34 +82,14 @@ def get_db_connection():
     # Check if we have connection info in session
     if 'db_config' in session:
         config = session['db_config']
-        # Always check and reconnect if needed
-        if not db.connection or not db.connection.is_connected():
-            print(f"[DB] Connecting to database: {config.get('database')} at {config.get('host')}")
-            success = db.connect(
+        if not db.connection or not db.test_connection():
+            db.connect(
                 host=config.get('host', 'localhost'),
                 user=config.get('user'),
                 password=config.get('password'),
                 database=config.get('database'),
                 port=config.get('port', 3306)
             )
-            if not success:
-                raise Exception("Failed to connect to database")
-        else:
-            # Ping to keep connection alive
-            try:
-                db.connection.ping(reconnect=True)
-            except:
-                print("[DB] Connection lost, reconnecting...")
-                db.connect(
-                    host=config.get('host', 'localhost'),
-                    user=config.get('user'),
-                    password=config.get('password'),
-                    database=config.get('database'),
-                    port=config.get('port', 3306)
-                )
-    else:
-        print("[DB] No database configuration in session")
-    
     return db
 
 def init_db_tables():
